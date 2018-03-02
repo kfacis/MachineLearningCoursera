@@ -1,0 +1,126 @@
+---
+title: "Practical Machine Learning - Project"
+author: "KF"
+date: "February 25, 2018"
+output: html_document
+---
+
+
+#Synopsis
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively. These type of devices are part of the quantified self movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. In this project, your goal will be to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. 
+
+#Goal
+The goal of your project is to predict the manner in which they did the exercise. This is the "classe" variable in the training set. You may use any of the other variables to predict with. You should create a report describing how you built your model, how you used cross validation, what you think the expected out of sample error is, and why you made the choices you did. You will also use your prediction model to predict 20 different test cases.
+
+#Data
+Training data: 
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+Test data:
+
+https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+```{r setup, include=FALSE, echo = FALSE}
+knitr::opts_chunk$set(echo = TRUE, autodep = TRUE, cache = TRUE, message = FALSE) #echo..need to set to TRUE to show code chunks
+```
+
+Loading in required packages
+
+```{r packages}
+library(data.table);library(caret);library(rpart);library(rpart.plot)
+library(RColorBrewer);library(rattle);library(randomForest);library(knitr);library(e1071)
+```
+
+Read in data from csv hyperlink. 
+
+```{r read}
+link_train <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+link_test <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+trainRaw <- read.csv(url(link_train), na.strings=c("NA","#DIV/0!",""))
+testRaw <- read.csv(url(link_test), na.strings=c("NA","#DIV/0!",""))  
+```
+
+The training set will be split 70/30 (70% to build the model and 30% to test model against before applying to true testing data). 
+```{r trainsplit}
+set.seed(42)
+train_split <- createDataPartition(trainRaw$classe, p =0.7, list = FALSE)
+train_1 <- trainRaw[train_split,]
+train_2 <- trainRaw[-train_split,]
+dim(train_1); dim(train_2)
+```
+
+##Data cleansing and preparation
+There will be two pieces to data preparation and cleansing. The first step is to run the function nearZeroVar to see which variables have little variability and will therefore not be good predictors.
+
+```{r nsv}
+nzv <- nearZeroVar(train_1, saveMetrics=TRUE)
+train_1 <- train_1[,nzv$nzv==FALSE]
+train_2 <- train_2[,nzv$nzv==FALSE]
+dim(train_1); dim(train_2)
+```
+
+Identifying clutter variables that do not have sufficient data to build into models. These are columns with highest NA counts. na_count is a vector that contains TRUE if the column has no NAs. These are the columns we want to incorporate into our model building
+
+```{r train_1}
+discardColumns <- sapply(train_1, function(x) mean(is.na(x))) > 0.95
+train_1 <- train_1[, discardColumns==F]
+train_2 <- train_2[, discardColumns==F]
+dim(train_1); dim(train_2)
+#dropping these five irrelevant columns
+knitr::kable(train_1[1:5,1:5])
+train_1 <- train_1[, -c(1:5)]
+train_2 <- train_2[, -c(1:5)]
+dim(train_1); dim(train_2)
+
+```
+
+
+##Modeling
+Ising the train_1 dataframe, I constructed three models using Random forest. 
+1. Random Forest
+2. Generalized Boosted Regression (gbm)
+3. Linear discriminate analysis
+These three models will be built using train_1 and predicted on train_2
+
+```{r modeling}
+mod_rf <- randomForest(classe ~ ., data = train_1, method = "rf")
+mod_gbm <- randomForest(classe ~ ., data = train_1, method = "gbm")
+mod_lda <- randomForest(classe ~ ., data = train_1, method = "lda")
+p_rf <- predict(mod_rf, train_2)
+p_gbm <- predict(mod_gbm, train_2)
+p_lda <- predict(mod_lda, train_2)
+```
+
+Storing the accuracy metric for these three models:
+```{r accuracy}
+accuracy_rf <- postResample(p_rf, train_2$classe)
+accuracy_gbm <- postResample(p_gbm, train_2$classe)
+accuracy_lda <- postResample(p_lda, train_2$classe)
+accuracy_rf; accuracy_gbm; accuracy_lda
+```
+
+From the accuracy output, we can see the lda model has the highest accuracy and lowest out-of-sample error rate.
+```{r lda}
+mod_lda #our OOB estimate of error rate: 0.3%
+plot(mod_lda)
+confusionMatrix(train_2$classe, p_lda)
+```
+
+Predict on test set using the lda model:
+```{r result_lda}
+result_lda <- predict(mod_lda, testRaw)
+result_lda
+```
+
+Generate txt file containing results.
+```{r results, warning=FALSE, message=F, results=F}
+lapply(result_lda, function(x) write.table( data.frame(x), 'results.txt'  , append= T, sep=',' ))
+```
+
+
+
+
+
+
+
+
