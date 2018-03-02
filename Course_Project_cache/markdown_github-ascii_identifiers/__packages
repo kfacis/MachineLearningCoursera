@@ -1,0 +1,12 @@
+base
+data.table
+lattice
+ggplot2
+caret
+rpart
+rpart.plot
+RColorBrewer
+rattle
+randomForest
+knitr
+e1071

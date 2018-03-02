@@ -1,0 +1,10 @@
+packages	library	data.table	caret	rpart	rpart.plot	RColorBrewer	rattle	randomForest	knitr	e1071
+read	link_train	link_test	trainRaw	read.csv	url	c	testRaw
+trainsplit	set.seed	train_split	createDataPartition	trainRaw	classe	train_1	train_2	dim
+nsv	nzv	nearZeroVar	train_1	train_2	dim
+train_1	discardColumns	sapply	train_1	mean	is.na	x	F	train_2	dim	kable	c
+modeling	mod_rf	randomForest	classe	.	train_1	mod_gbm	mod_lda	p_rf	predict	train_2	p_gbm	p_lda
+accuracy	accuracy_rf	postResample	p_rf	train_2	classe	accuracy_gbm	p_gbm	accuracy_lda	p_lda
+lda	mod_lda	plot	confusionMatrix	train_2	classe	p_lda
+result_lda	result_lda	predict	mod_lda	testRaw
+results	lapply	result_lda	write.table	data.frame	x	T

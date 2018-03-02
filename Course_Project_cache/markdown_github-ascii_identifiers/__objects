@@ -1,0 +1,10 @@
+packages	.Random.seed
+read	link_test	link_train	testRaw	trainRaw
+trainsplit	train_1	train_2	train_split
+nsv	nzv	train_1	train_2
+train_1	discardColumns	train_1	train_2
+modeling	mod_gbm	mod_lda	mod_rf	p_gbm	p_lda	p_rf
+accuracy	accuracy_gbm	accuracy_lda	accuracy_rf
+lda	
+result_lda	result_lda
+results	
